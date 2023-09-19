@@ -1,0 +1,809 @@
+---
+title: "Projet IF36"
+author: "Taojun WANG & Fulin ZHANG & Lisa GINISTY"
+date: '2022-04-28'
+output:
+  html_document:
+    code_folding: show
+    theme:
+      color-contrast-warnings: false
+      bg: "#202123"
+      fg: "#B8BCC2"
+      primary: "#EA80FC"
+      secondary: "#00DAC6"
+      base_font:
+        google: Prompt
+      heading_font:
+        google: Proza Libre
+runtime: shiny
+---
+
+## Introduction
+
+### Données
+
+Notre jeu de données provient d'un sondage réalisé en 2014 sur des travailleurs du domaine de la technologie pour la plupart. Il concerne des questions liées aux attitudes à l'égard de la santé mentale dans le monde professionnel, ainsi que la fréquence des troubles de santé mentale dans ce milieu.
+
+Les données viennent pour les trois quarts des États-Unis et du Royaume-Uni. Le dataset est au format CSV. Nous l'avons récupéré via le site Kaggle (<https://www.kaggle.com/osmi/mental-health-in-tech-survey>)
+
+Nous avons choisi ce dataset, car il s'intègre parfaitement dans le contexte de "l'après-Covid". Ce dernier a engendré beaucoup de désordres psychologiques, notamment chez les salariés, via l'isolement et les contraintes de gestion de travail engendrées par le télétravail. Étudier un jeu de données de ce type nous a donc semblé très intéressant dans ce contexte.
+
+Le jeu de données comprend 1259 réalisations (donc concerne un sondage réalisé sur 1259 individus). On compte également 27 variables, listées ci-dessous avec leur type.
+
+| Nom de variable             | Description                                                                                                                                 | Type                 |
+|-------------|----------------------------------------------|-------------|
+| *Timestamp*                 | Date et heure auxquelles le sondage a été réalisé pour l'individu                                                                           | Temporelle           |
+| *Age*                       | Age du répondant                                                                                                                            | Continue             |
+| *Gender*                    | Genre du répondant                                                                                                                          | Catégorielle         |
+| *Country*                   | Pays du répondant                                                                                                                           | Catégorielle         |
+| *state*                     | L'état où habite le répondant (s'il réside aux États-Unis)                                                                                  | Catégorielle         |
+| *self_employed*             | Dit si le répondant est son propre patron ou non                                                                                            | Catégorielle binaire |
+| *family_history*            | Dit s'il y a des antécédents familiaux de maladies mentales                                                                                 | Catégorielle binaire |
+| *treatment*                 | Dit si le répondant prend un traitement ou non pour cause de trouble de la santé mentale                                                    | Catégorielle binaire |
+| *work_interfere*            | Dit si un problème de santé mentale interfère ou non avec le travail                                                                        | Ordinale             |
+| *no_employees*              | Nombre d'employés dans l'entreprise du répondant                                                                                            | Continue             |
+| *remote_work*               | Dit si le salarié travaille au moins 50% du temps à distance                                                                                | Catégorielle binaire |
+| *tech_company*              | Dit si l'entreprise est du domaine de la technologie                                                                                        | Catégorielle binaire |
+| *benefits*                  | Dit si l'employeur propose des mesures en terme de santé mentale                                                                            | Catégorielle         |
+| *care_options*              | Dit si l'entreprise communique bien sur tout ce qui peut être mis en place pour la santé mentale de l'employé                               | Catégorielle         |
+| *wellness_program*          | Dit si l'employeur a déjà abordé la question de la santé mentale dans le cadre d'un programme de bien-être au profit des salariés           | Catégorielle         |
+| *seek_help*                 | Dit si l'employeur fournit des ressources pour en savoir plus sur les problèmes de santé mentale et sur la façon de demander de l'aide      | Catégorielle         |
+| *anonymity*                 | Dit si l'anonymat du salarié est protégé s'il choisit de profiter des ressources de traitement de la santé mentale ou de la toxicomanie     | Catégorielle         |
+| *leave*                     | Dit à quel point il est facile pour le salarié de prendre un congé pour un problème de santé mentale                                        | Ordinale             |
+| *mental_health_consequence* | Dit si le salarié pense que discuter de problèmes de santé mentale aurait des conséquences négatives                                        | Catégorielle         |
+| *phys_health_consequence*   | Dit si le salarié pense que discuter de problèmes de santé physique aurait des conséquences négatives                                       | Catégorielle         |
+| *coworkers*                 | Dit si le salarié discuterait de problèmes de santé mentale avec ses collègues                                                              | Catégorielle         |
+| *supervisor*                | Dit si le salarié discuterait de problèmes de santé mentale avec son(es) supérieur(s) direct(s)                                             | Catégorielle         |
+| *mental_health_interview*   | Dit si un travailleur en recherche de travail aborderait le sujet de problèmes de santé mentale avec un potentiel employeur                 | Catégorielle         |
+| *phys_health_interview*     | Dit si un travailleur en recherche de travail aborderait le sujet de problèmes de santé physique avec un potentiel employeur                | Catégorielle         |
+| *mental_vs_physical*        | Dit si le travailleur pense que son employeur prend les problèmes de santé mentale aussi sérieusement que des problèmes de santé physique   | Catégorielle         |
+| *obs_consequence*           | Dit si le salarié a déjà connu des cas (dans ses collègues notamment) où des problèmes de santé mentale aurait eu de mauvaises conséquences | Catégorielle         |
+| *comments*                  | Commentaires supplémentaires ajoutés par l'individu                                                                                         |                      |
+
+### Plan d'analyse
+
+Tout au long de cette étude, nous allons chercher à répondre aux problématiques suivantes :
+
+<center>
+
+**Peut-on extraire un profil type du travailleur souffrant de troubles psychologiques ou de santé mentale impactant son travail ?**
+
+**Peut-on extraire un profil type d'entreprise qui regroupe les salariés les plus impactés par des troubles psychologiques ou de santé mentale au travail ? Un profil type selon la géographie ?**
+
+**Quelle est la vision du salarié par rapport à la réalité/aux actions de l'entreprise ?**/center\>
+
+Nous allons tenter de répondre à ces questionnements via les analyses suivantes :
+
+| Questions                                                                                                                                                                                                                              | Variables associées                                                                                                                            |
+|--------------------------------------------|----------------------------|
+| Y a-t-il une corrélation entre la santé mentale d'un salarié et le lieu géographique où il travaille ?                                                                                                                                 | *Country, state, work_interfere*                                                                                                               |
+| Existe-t-il un lien entre l'impact des problèmes psychologiques et l'âge/le sexe ?                                                                                                                                                     | *work_interfere, Age*                                                                                                                          |
+| Y a-t-il une corrélation entre le type d'entreprise où la personne travaille (patron ou non, domaine, nombre d'employés...) et la santé mentale du travailleur?                                                                        | *self_employed, work_interfere, no_employees, remote_work, tech_company*                                                                       |
+| Y a-t-il une corrélation entre la facilité de prendre un congé pour cause de désordre mentale dans l'entreprise et le fait ou non que les employeurs aient mis en place des mesures pour la santé mentale?                             | *work_interfere, anonymity, leave*                                                                                                             |
+| Y a-t-il une corrélation entre l'ouverture d'esprit de l'entreprise et les mesures qu'elle peut mettre en place pour la santé mentale de ses salariés, et le fait que la santé mentale interfère avec le travail ?                     | *work_interfere, benefits, care_option, wellness_program, seek_help, anonymity, leave, mental_health_consequence, supervisor, obs_consequence* |
+| Y a-t-il une corrélation entre l'attitude de son employeur et celle de ses collègues sur le sujet de la santé mentale?                                                                                                                 | *mental_health_consequence, coworkers, supervisor*                                                                                             |
+| Y a-t-il une corrélation entre le fait qu'un salarié en recherche de travail va aborder le sujet de la santé mentale avec un potentiel employeur, et le fait qu'il ait déjà connu/assisté à des conséquences négatives que cela a eu ? | *mental_health_interview, obs_consequence*                                                                                                     |
+| Y a-t-il une corrélation entre santé mentale et travail à distance ?                                                                                                                                                                   | *work_interfere, remote_work*                                                                                                                  |
+| Les employés sont plus susceptibles d'aborder les problèmes de santé mentale avec leurs collègues qu'avec leurs employeurs ?                                                                                                           | *mental_health_consequence, coworkers, supervisor*                                                                                             |
+
+Nous rencontrerons les problèmes suivants :
+
+-   Au niveau de la forme des données : en effet, on voit par exemple que la variable "*gender*" contient à la fois des valeurs "*male*" mais aussi des valeurs "*Males*". La non uniformité des valeurs compliquera éventuellement quelque peu la tâche.
+
+-   La dernière donnée "*comments*" qui sera plus difficile à exploiter de par sa forme, mais qui peut néanmoins contenir des informations intéressantes.
+
+-   D'autre part, il est à noter une grande homogénéité des pays concernés par le sondage (60% aux USA, 15% au Royaume-Uni). Notre analyse ne sera donc pas forcément représentative pour les autres pays, qui sont sous-représentés dans ce dataset.
+
+## Partie exploratoire
+
+Dans cette partie, nous allons tenter d'analyser le jeu de données. Nous allons notamment creuser les questionnements évoqués dans l'introduction. Notre analyse se basera sur la création de visualisations pertinentes. Nous ne nous attarderons pas dans ce document sur la manière dont nous avons réalisé les graphes. Nous nous focaliserons plutôt sur l'analyse des différents graphes qui nous permettront d'expliciter le jeu de données.
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(maps)
+library(tidyverse)
+library(plotrix)
+library(rgl)
+library(reshape2)
+library(shiny)
+```
+
+Dans les quelques figures ci-dessous, vous pourrez voir à la fois des **fichiers statiques réalisés en R**, mais **également du Shinny RMarkdown qui va nous permettre d'afficher des graphes interactifs directement dans ce fichier**.\
+En plus de cela, vous retrouverez dans notre git notre **Shiny App** contenant les mêmes graphes interactifs que ceux que vous pourrez voir dans ce document. Nous n'avons de ce fait pas inclus de captures d'écran de ces derniers, car cela n'apporterait rien de supplémentaire.
+
+## I. Explication du nettoyage necéssaire des données
+
+Avant de pouvoir exploiter pleinement notre jeu de données, un certain nombre de traitements a été nécessaire. Il y avait en effet 2 enjeux :
+
+-   Harmoniser les valeurs de certaines variables : par exemple, la variable *gender* prend 11 valeurs différentes pour la modalité "homme".
+
+-   Faire en sorte de pouvoir effectuer des visualisations pertinentes de notre jeu de données. En effet, une grande majorité de nos variables sont catégorielles ou ordinales. Il a donc fallu les convertir en variables continues afin de créer nos graphiques, être vigilants à bien respecter les échelles des autres variables selon les graphiques,...
+
+Tous ces traitements sont visibles dans nos lignes de code.
+
+## II. Exploration du jeu de données
+
+Tout d'abord, afin d'avoir un aperçu de notre jeu de données, la figure interactive suivante vous permet d'afficher le nombre de lignes (individus) souhaités. S'afficheront donc pour chaque les valeurs prises pour chacune des 27 variables.
+
+```{r message=FALSE, echo=FALSE}
+survey <- read_csv("./data/survey.csv")
+numericInput("rows", "Nombre de lignes à afficher ?", 10)
+
+renderTable({
+  head(survey, input$rows)
+})
+```
+
+Dans un premier temps, nous tenterons de répondre à la question suivante :
+
+### Peut-on extraire un profil type du travailleur souffrant de troubles psychologiques ou de santé mentale impactant son travail ?
+
+Afin d'évaluer s'il existe un profil type ou non du salarié souffrant de troubles de la santé mentale affectant son travail, commençons par répondre à la question suivante : **Existe-t-il un lien entre l'impact des problèmes psychologiques sur le travail et l'âge ? Entre l'impact des problèmes psychologiques sur le travail et le sexe ?** En effet, on peut supposer que les problèmes de santé mentale n'impactent pas forcément le travail des salariés avec la même intensité selon le sexe et l'âge. Par exemple, on s'attend à ce que des employés relativement jeunes (entre 20 et 35 ans) et ceux proches de la retraite (entre 60 et 65 ans) soient affectés de manière moins intense que des salariés entre 40 et 50 ans, pour qui les enjeux sont peut-être plus importants.
+
+Pour tenter de répondre à cette question, nous allons tout d'abord chercher à évaluer la part que représente chacune de ces populations dans notre dataset. Le graphe ci-dessous présente la part de femmes et d'hommes en fonction de leur âge dans l'échantillon total du dataset.
+
+Cette visualisation correspond à celle faite classiquement pour une pyramide des âges.
+
+```{r graphique1, message=FALSE, echo=FALSE}
+survey <- survey %>% filter(Age > 0) %>% filter(Age<200) %>% mutate(
+    Gender_new = case_when(
+      Gender == "Male" ~ "Male",
+      Gender == "male" ~ "Male",
+      Gender == "M" ~ "Male",
+      Gender == "m" ~ "Male",
+      Gender == "Man" ~ "Male",
+      Gender == "man" ~ "Male",
+      Gender == "Mail" ~ "Male",
+      Gender == "maile" ~ "Male",
+      Gender == "Make" ~ "Male",
+      Gender == "Mal" ~ "Male",
+      Gender == "Malr" ~ "Male",
+      Gender == "msle" ~ "Male",
+      Gender == "Female" ~ "Female",
+      Gender == "female" ~ "Female",
+      Gender == "F" ~ "Female",
+      Gender == "f" ~ "Female",
+      Gender == "Femake" ~ "Female",
+      Gender == "femail" ~ "Female",
+      Gender == "Women" ~ "Female",
+      Gender == "women" ~ "Female",
+    )
+  )
+survey_distribute_age_gender <- survey %>% select(Age, Gender_new)
+ageLables <- cut(survey_distribute_age_gender$Age, breaks = c(0,10, 20, 30, 40, 50, 60, 70), labels = c("0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70"))
+survey_distribute_age_gender <- cbind(survey_distribute_age_gender, ageLables)
+survey_distribute_age_gender_summrize <- survey_distribute_age_gender %>%
+  group_by(ageLables, Gender_new) %>%
+  summarise(n = n()) %>%
+  filter(!is.na(Gender_new), !is.na(ageLables))
+
+ggplot(survey_distribute_age_gender_summrize, aes(x = ageLables, y = ifelse(Gender_new == "Male", n, -n), fill = Gender_new)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs, limits = c(-450, 450)) +
+  xlab("age Range") +
+  ylab("population") +
+  ggtitle("Distribution des ages et genres dans la population du dataset") +
+  coord_flip()
+```
+
+Nous allons également essayer de visualiser à quel moment ces personnes ont répondu au sondage, afin de vérifier si un genre ou une tranche d'âge a été plus représenté à un moment donné. Le contexte est important à prendre en compte.
+
+La visualisation suivante est linéaire dans le temps, et permet ainsi d'identifier rapidement les dates de saisie, les genres et les tranches d'âge concernées.
+
+```{r graphique2, message=FALSE, echo=FALSE}
+survey_distribute_time <- survey %>%
+    mutate(date = as.Date(survey$Timestamp))
+ survey_distribute_time %>% 
+   ggplot(aes(x = date, y = Age, colour = Gender_new)) + 
+   geom_point() + 
+   ggtitle("Repartition des ages et genres des répondants \n selon la date de réponse au sondage")
+
+```
+
+On déduit immédiatement des 2 graphes précédents que les hommes sont beaucoup plus représentés que les femmes, notamment chez les plus de 40 ans. Aussi, on remarque également que les 20-40 ans sont beaucoup plus présents dans le dataset que les autres générations. Ceci n'est pas étonnant outre mesure, mais on en conclut néanmoins que nous devrons nuancer toute analyse concernant les femmes et les personnes de plus de 40 ans, car elles ne sont pas représentées de manière significative dans le jeu de données.
+
+Maintenant, étudions la répartition de l'âge des salariés en fonction de la manière dont les problèmes de santé mentale interfèrent avec le travail. La première visualisation permet d'identifier rapidement les tranches d'âge les plus concernées par chaque option. Ensuite, le second graphique permet, via boxplot, de compléter cette analyse avec des indicateurs statistiques sur l'échantillon.
+
+```{r graphique3, message=FALSE, echo=FALSE}
+survey_origin <- survey
+survey_age_gender_wi <- survey_origin %>%
+  drop_na(work_interfere, Age, Gender) %>%
+  select(Age, Gender, work_interfere) %>%
+  filter(Age > 10, Age < 100) %>%
+  mutate(
+    Gender_new = case_when(
+      Gender == "Male" ~ "Male",
+      Gender == "male" ~ "Male",
+      Gender == "M" ~ "Male",
+      Gender == "m" ~ "Male",
+      Gender == "Man" ~ "Male",
+      Gender == "man" ~ "Male",
+      Gender == "Mail" ~ "Male",
+      Gender == "maile" ~ "Male",
+      Gender == "Make" ~ "Male",
+      Gender == "Mal" ~ "Male",
+      Gender == "Malr" ~ "Male",
+      Gender == "msle" ~ "Male",
+      Gender == "Female" ~ "Female",
+      Gender == "female" ~ "Female",
+      Gender == "F" ~ "Female",
+      Gender == "f" ~ "Female",
+      Gender == "Femake" ~ "Female",
+      Gender == "femail" ~ "Female",
+      Gender == "Women" ~ "Female",
+      Gender == "women" ~ "Female",
+    )
+  ) %>%
+  select(Age, Gender_new, work_interfere)
+survey_age_gender_wi[is.na(survey_age_gender_wi) == TRUE] <- "Other"
+
+ggplot(data = survey_age_gender_wi, mapping = aes(
+  x = work_interfere, y = Age, fill = work_interfere
+)) +
+  geom_violin() +
+  labs(
+    title = "Repartition de l'age des repondants en fonction de la maniere dont \n leur sante mentale interfere avec leur travail", x = "work_interfere",
+    y = "Age"
+  )
+
+ggplot(survey_age_gender_wi, aes(x = work_interfere, y = Age, color = Gender_new)) +
+  geom_boxplot(outlier.colour = "orange", outlier.shape = 19, outlier.size = 1.5) +
+  scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9")) +
+  theme(
+    legend.position = "bottom", panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "skyblue")
+  ) +
+  labs(title = "Repartition de l'age des repondants en fonction de la maniere dont \n leur sante mentale interfere avec leur travail", x = "Work Interfere", y = "Age")
+```
+
+De manière assez étonnante, on peut constater que la proportion de gens pour qui la santé mentale intefère *jamais*, *rarement*, *parfois* ou *souvent* est quasiment identique en fonction de l'âge. Il ne semble pas y avoir de modalité privilégiée pour les 20-40 ans, pour qui la probabilité d'être impacté ou non semble équiprobable.\
+On peut cependant noter que les très jeunes (moins de 20 ans) et les plus âgés (plus de 60 ans) semblent beaucoup moins impactés que les autres tranches d'âge.\
+De même, on remarque que l'âge médian de chacune des intensités possibles pour la variable *work_interfere* (qui dit à quel point la santé mentale d'un salarié interfère avec son travail) semble à peu près identique. Cela vient confirmer qu'une classe d'âge en semble en aucun cas plus impactée qu'une autre, mis à part pour les plus jeunes et les plus âgés des répondants qui ne semblent pas souffrir du tout de ce type de problème. Nous devons toutefois nuancer ce propos, car les populations jeunes et âgées sont mal représentées dans le dataset.\
+Enfin, il ne semble pas y avoir de distinction des genres : bien que la médiane des femmes dans les 4 valeurs d'intensité possibles semblent légèrement inférieure à celles des hommes, il ne faut pas oublier qu'on a vu un peu plus haut que presque aucune femme âgée de plus de 40 n'a répondu au sondage.
+
+D'autre part, pour établir la typologie du salarié, nous allons tenter de répondre à une dernière question : **Y a-t-il une corrélation entre santé mentale et travail à distance ?** Pour cela, il va nous falloir vérifier si les salariés en télétravail sont plus souvent sous traitement pour cause de troubles de la santé mentale que pour les autres salariés.
+
+Les deux visualisations suivantes en mode "fill" permettent de représenter facilement des proportions, ici la répartition des répondants.
+
+```{r graphique4, echo=FALSE}
+survey_treatment_remote_work <- survey %>% select(remote_work, treatment)
+
+ggplot(survey_treatment_remote_work, aes(x = remote_work, fill = treatment)) +
+  geom_bar(position = "fill",colour = "black") +
+  ggtitle("Repartition des personnes sous traitement pour cause de desordre \n de la sante mentale au sein des personnes effectuant du teletravail") +
+  scale_fill_brewer(palette = "Pastel1")
+
+```
+
+De manière plutôt étonnante, la part de salariés sous traitement ne semble pas être influencée par le fait de faire du télétravail : la proportion est identifique dans les 2 cas, 50% de gens avec traitement. Peut-être les personnes ne sont-elles pas sous traitement, mais sont-elles quand même impactées dans leur travail par leur santé ? Vérifions maintenant si les personnes en télétravail souffrent d'un impact de leur santé mentale sur leur travail plus important.
+
+```{r graphique5, echo=FALSE}
+survey_work_interfere_remote_work <- survey %>%
+  select(remote_work, work_interfere) %>%
+  filter(work_interfere != "NA")
+
+ggplot(survey_work_interfere_remote_work, aes(x = remote_work, fill = work_interfere)) +
+  geom_bar(position = "fill",colour = "black") +
+  ggtitle("Repartition de la maniere dont la santé interfere avec le travail \n pour des personnes effectuant du teletravail") +
+  scale_fill_brewer(palette = "Pastel1")
+```
+
+Les personnes en télétravail ne voient apparemment pas plus leur santé mentale interférer avec leur travail que les autres, malgré l'isolement occasionné. Les quelques écarts sont faibles et pas vraiment significatifs. Ce résultat semble si étonnant qu'il faudrait vérifier la part de personnes en télétravail dans le dataset : peut-être ces personnes sont-elles sous-représentées, et dans ce cas les résultats sont-ils biaisés?
+
+```{r graphique6, echo=FALSE}
+paste0("Le pourcentage des repondants effectuant du teletravail dans le dataset est de : " , length(which(survey$remote_work == "Yes"))*100/nrow(survey))
+```
+
+Quasiment 30% des répondants au sondage effectuent du télétravail. Ces personnes sont donc assez bien représentées.\
+On peut déduire que le télétravail ne semble pas être en jeu dans le développement de troubles de la santé mentale.
+
+Dans cette première partie nous avons pu vérifier qu'il n'y a pas vraiment de profil type de l'employé avec des problèmes de santé mentale importants, mis à part que ce souci semble moins concerner les plus âgés (plus de 60 ans) et les plus jeunes (moins de 20 ans).
+
+### **Peut-on extraire un profil type d'entreprise qui regroupe les salariés les plus impactés par des troubles psychologiques ou de santé mentale au travail ? Un profil type selon la géographie ?**
+
+Maintenant, essayons d'établir un profil type d'entreprise favorisant les troubles de la santé mentale interférant avec le travail.
+
+Tout d'abord, **y a-t-il une corrélation entre la santé mentale d'un salarié et le lieu géographique où il travaille ?**
+
+Regardons si la manière dont la santé interfère avec le travail d'un salarié est liée à une zone géographique. On ne s'attend pas à des résultats homogènes.\
+La conjonction des états/pays par ligne avec la répartition des répondants dans le graphique interactif ci-dessous permet d'évaluer dans quels pays et quels états des USA la santé interfère le plus dans le travail.
+
+```{r graphique7, message=FALSE, echo=FALSE}
+
+survey_country_state_wi <- survey %>%
+  drop_na(work_interfere) %>%
+  select(Country, state, work_interfere)
+
+survey_country_state_wi_nonna <- survey_country_state_wi %>%
+  drop_na(state) %>%
+  filter(Country == "United States")
+
+selectInput("selectCountry",
+  label = h3("Selectionner l'echelle geographique"),
+  choices = list("USA" = "state", "World" = "Country"), selected = "state"
+)
+
+renderPlot(
+  {
+    if (input$selectCountry == "state") {
+      ggplot(
+        data = survey_country_state_wi_nonna,
+        mapping = aes(
+          x = state,
+          fill = work_interfere,
+          y = ..count..
+        )
+      ) +
+        geom_bar(position = "fill") +
+        coord_flip() +
+        labs(
+          x = "State",
+          y = "Ratio",
+          title = "Repartition de la maniere avec laquelle \n la sante interfere sur le teletravail \n au sein des États-Unis",
+          subtitle = "--",
+          caption = "Source: Survey"
+        ) +
+        theme(
+          legend.position = "bottom",
+          plot.background = element_rect(colour = "black", size = 3, linetype = 4, fill = "lightblue"),
+          plot.title = element_text(colour = "black", face = "bold", size = 30, vjust = 1),
+          plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "inches")
+        )
+    } else if (input$selectCountry == "Country") {
+      ggplot(
+        data = survey_country_state_wi,
+        mapping = aes(
+          x = Country,
+          fill = work_interfere,
+          y = ..count..
+        )
+      ) +
+        geom_bar(position = "fill") +
+        coord_flip() +
+        labs(
+          x = "Country",
+          y = "Ratio",
+          title = "Repartition de la maniere avec laquelle \n la sante interfere sur le teletravail \n au sein du monde",
+          subtitle = "--",
+          caption = "Source: Survey"
+        ) +
+        theme(
+          legend.position = "bottom",
+          plot.background = element_rect(colour = "black", size = 3, linetype = 4, fill = "lightblue"),
+          plot.title = element_text(colour = "black", face = "bold", size = 30, vjust = 1),
+          plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "inches")
+        )
+    }
+  },
+  width = "auto",
+  height = 1000
+)
+```
+
+Le deuxième graphique interactif ci-dessous permet encore une fois de visionner dans quels états des USA la santé mentale interfère le plus avec le travail, mais est beaucoup plus visuel (cartographie avec dégradé de couleurs). Il peut également permettre de regarder en un coup d'oeil si certaines zones sont plus ou moins impactées que d'autres, etc.
+
+```{r graphique8, echo=FALSE}
+state_origin <- read.csv("./data/StateData.csv")
+
+state_origin <- state_origin %>%
+  select(State, Code)
+view(state_origin)
+
+survey_State <- survey %>%
+  drop_na(work_interfere, state) %>%
+  select(state, work_interfere)
+
+selectInput("selectInterfere",
+  label = h3("Sélectionner un niveau d'intensité d'interférence de la santé avec le travail"),
+  choices = list("Sometimes" = "1", "Often" = "2", "Rarely" = 3, "Never" = 4), selected = "1"
+)
+
+renderPlot({
+  if (input$selectInterfere == "1") {
+    survey_State <- survey_State %>%
+      filter(work_interfere == "Sometimes")
+  } else if (input$selectInterfere == "2") {
+    survey_State <- survey_State %>%
+      filter(work_interfere == "Often")
+  } else if (input$selectInterfere == "3") {
+    survey_State <- survey_State %>%
+      filter(work_interfere == "Rarely")
+  } else if (input$selectInterfere == "4") {
+    survey_State <- survey_State %>%
+      filter(work_interfere == "Never")
+  }
+
+
+  survey_State <- survey_State %>%
+    group_by(state) %>%
+    summarise(Count = n())
+
+  survey_State <- left_join(survey_State, state_origin, by = c("state" = "Code"))
+
+  state_map <- map_data("state")
+  survey_state_map <- left_join(state_map, survey_State, by = c("region" = "State"))
+
+  ggplot(survey_state_map, aes(x = long, y = lat, group = group)) +
+    geom_polygon(aes(fill = Count), colour = "black") +
+    scale_x_continuous(breaks = seq(-180, 210, 45), labels = function(x) {
+      paste0(x, "°")
+    }) +
+    scale_y_continuous(breaks = seq(-60, 100, 30), labels = function(x) {
+      paste0(x, "°")
+    }) +
+    scale_fill_gradient(low = "lightblue", high = "steel blue") +
+    labs(
+      title = "Repartition de la maniere avec laquelle la sante interfere sur le teletravail au sein des États-Unis",
+      y = "Latitude", x = "Longitude",
+      subtitle = "The plot picks all state in the survey\n"
+    ) +
+    theme_light()
+})
+```
+
+Comme nous pouvions l'envisager, les résultats sont très disparates. On ne peut même pas établir de tendance au sein des pays développés ou au sein des pays de l'Union Européenne par exemple. Ces résultats sont encore une fois à nuancer, car peu de répondants sont issus de territoires hors américains.
+
+Le deuxième graphique nous a également permis de vérifier quels états sont le mieux représentés dans le sondage. On remarque ainsi que le jeu de données contient beaucoup de salariés issus de Californie.
+
+Ainsi, nous avons donc déterminé qu'en fonction du lieu de vie du salarié, la santé mentale ne semble pas interférer avec le travail de la même manière pour tout le monde, et que cela varie fortement d'un territoire à l'autre sans qu'on puisse trop y remarquer de tendances ou y voir de logique.
+
+Afin de compléter notre typologie de l'entreprise-type,nous pouvons essayer d'élargir cette analyse à d'autres facteurs. Il serait en effet intéressant de vérifier si les entreprises prennent réellement des mesures concrètes et cohérentes pour lutter contre le fléau des problèmes de santé mentale et quel peut en être l'impact. Aussi, **y a-t-il une corrélation entre la facilité de prendre un congé pour cause de désordre mental dans l'entreprise et le fait ou non que les employeurs aient mis en place des mesures pour la santé mentale?**
+
+Le graphique ci-après établit un score de facilité de prise de congé (très facile : 3 points, très difficile : 0 point) et associe les scores moyens obtenus en regroupant les mêmes réponses à plusieurs variables. L'affichage des moyennes par modalité est regroupé (mode "dodge") par variable. Cette représentation permet alors d'identifier rapidement les écarts de moyennes entre les modalités, et identifier potentiellement celle(s) qui impacte(nt) la facilité de prise de congé.
+
+```{r graphique9, echo=FALSE}
+criterias <- c(rep("Wellness" , 3) , rep("Seek help" , 3) , rep("Anonymity" , 3))
+survey_leave <- survey %>%
+  select(Age, leave, anonymity, wellness_program, seek_help) %>%
+  filter(Age > 0) %>%
+  mutate(
+    leave_score = case_when(
+      leave == "Don't know" ~ -1,
+      leave == "Very difficult" ~ 0,
+      leave == "Somewhat difficult" ~ 1,
+      leave == "Somewhat easy" ~ 2,
+      leave == "Very easy" ~ 3,
+    )
+  ) %>%
+  select(leave_score, anonymity, wellness_program, seek_help) %>%
+  filter(leave_score >= 0)
+condition <- rep(c("Don't know", "No" , "Yes") , 3)
+leave_score_mean_wellness <- aggregate(survey_leave$leave_score, list(survey_leave$wellness_program), mean)$x
+leave_score_mean_anonymity <- aggregate(survey_leave$leave_score, list(survey_leave$anonymity), mean)$x
+leave_score_mean_seek_help <- aggregate(survey_leave$leave_score, list(survey_leave$seek_help), mean)$x
+leave_score_mean <- c(leave_score_mean_wellness, leave_score_mean_seek_help, leave_score_mean_anonymity)
+data_plot <- data.frame(criterias, condition, leave_score_mean)
+ggplot(data_plot, aes(fill=condition, y=leave_score_mean, x=criterias)) + 
+    geom_bar(position="dodge", stat="identity") +
+    ggtitle("Facilite de prendre un conge pour cause de trouble de la sante mentale \n selon les actions prises par l'entreprise")
+```
+
+On a cherché à vérifier si les entreprises mettant en place des actions pour la protection de la santé mentale de leurs employés (programmes de bien-être, accès à des ressources, prévention, garantie de l'anonymat des personnes utilisant toutes ces ressources...) permettaient également facilement à leurs employés de prendre un congé pour cause de désordre mental, luttant ainsi concrètemement contre le burn out.\
+Le graphique ci-en-haut nous montre que le fait qu'une entreprise propose des ressources, des programmes de bien-être, etc... n'est pas un indicateur qui va permettre de définir si l'entreprise est concrètement engagée dans la lutte contre les désordres de la santé mentale. Cependant, le fait que l'entreprise respecte l'anonymat de ses employés est un très bon indicateur pour dire si une entreprise est engagée fermement.
+
+Zoomons sur le cas où il est au moins "assez facile" de prendre un congé pour raison de problèmes de santé mentale dans une entreprise. Pour identifier rapidement si l'anonymat impacte, nous prenons toutes les réponses ayant un score élevé de facilité prise de congé (\>= 2) et nous regardons la répartition (mode "fill") des réponses.
+
+```{r graphique10, echo=FALSE}
+criterias <- c("leave >= 2")
+survey_leave <- survey %>%
+  select(Age, leave, anonymity) %>%
+  filter(Age > 0) %>%
+  mutate(
+    leave_score = case_when(
+      leave == "Don't know" ~ -1,
+      leave == "Very difficult" ~ 0,
+      leave == "Somewhat difficult" ~ 1,
+      leave == "Somewhat easy" ~ 2,
+      leave == "Very easy" ~ 3,
+      
+    )
+  ) %>%
+  select(leave_score, anonymity) %>%
+  filter(leave_score >= 2)
+condition <- c("Anonymity", "No anonymity", "Don't know")
+count_anonymity <- length(which(survey_leave$anonymity == "Yes"))
+count_no_anonymity <- length(which(survey_leave$anonymity == "No"))
+dont_know <- length(which(survey_leave$anonymity == "Don't know"))
+proportion <- c(count_anonymity, count_no_anonymity, dont_know)
+data_plot <- data.frame(criterias, condition, proportion)
+ggplot(data_plot, aes(fill=condition, y=proportion, x=criterias)) + 
+    geom_bar(position="fill", stat="identity") +
+    ggtitle("Repartition des entreprises qui respectent l'anonymat des salaries quand \n il est au moins assez facile de prendre un conge pour motif de soucis de \n sante mentale")
+```
+
+On remarque que pour ce type d'entreprise, l'anonymat est effectivement quasiment toujours respecté (à environ 98%).\
+Cela confirme donc que le respect de l'anonymat des salariés est un excellent indicateur de l'engagement réel de la société dans laquelle ils travaillent. Ainsi, le fait qu'une entreprise propose des actions ne suffit pas à dire qu'elle lutte radicalement pour le bien-être mental des salariés dans son entreprise
+
+Par ailleurs, autre question intéressante à creuser, qu'en est-il du fait d'être son propre employeur ? **Une personne qui s'emploie elle-même (à son compte, chef d'entreprise, etc...) est-elle plus encline à developper des troubles de la santé interférant avec le travail ?\
+** Ici encore, nous utilisons une visualisation en mode "fill" pour représenter facilement la répartition des répondants.
+
+```{r graphique11, echo=FALSE}
+survey_self_employed_work_interfere <- survey %>% select(self_employed, work_interfere) %>%
+  filter(work_interfere != "NA") %>%
+  filter(self_employed != "NA")
+
+ggplot(survey_self_employed_work_interfere, aes(x = self_employed, fill = work_interfere)) +
+  geom_bar(position = "fill",colour = "black") +
+  ggtitle("Repartition de la maniere dont la sante interfere avec le travail en fonction \n de si la personne s'emploie elle-meme ou non") +
+  scale_fill_brewer(palette = "Pastel1")
+
+
+```
+
+Ici encore, il y a moins de corrélation que ce qu'on aurait pu envisager. On remarque bien que les personnes qui s'emploient elles-mêmes semblent plus nombreuses à être impactées "souvent" par leur santé mentale sur leur travail (ce qui est l'intensité la plus forte) d'environ 15 points. Cette différence n'est toute fois pas aussi importante que prévue. On ne peut donc pas dire que le fait de s'employer soit-même engendre pléthore de troubles de la santé mentale.
+
+Enfin, voici d'autres questions de taille : **Y a-t-il une corrélation entre le type d'entreprise où la personne travaille et la santé mentale du travailleur? Les employés sont plus susceptibles d'aborder les problèmes de santé mentale avec leurs collègues qu'avec leurs employeurs dans ces entreprises ? Y a-t-il une corrélation entre l'attitude de son employeur et celle de ses collègues sur le sujet de la santé mentale?**
+
+Le moyen le plus efficace de répresenter l'évolution d'une variable selon une autre reste un line chart. Ici, nous allons observer l'évolution du score (comme établi précédemment) représentant la volonté/facilité de parler de ses soucis mentaux à son supérieur ou ses collègues en fonction de la taille de l'entreprise. En parralèle il est intéressant de comparer ces scores avec celui indiquant avec quelle intensité les troubles interviennent dans le travail.
+
+```{r graphique12, echo=FALSE}
+survey_size <- survey %>%
+  select(Age, no_employees, work_interfere, supervisor, coworkers) %>%
+  filter(Age > 0) %>%
+  mutate(
+    size = case_when(
+      no_employees == "6-25" ~ 6,
+      no_employees == "1-5" ~ 1,
+      no_employees == "26-100" ~ 26,
+      no_employees == "500-1000" ~ 500,
+      no_employees == "100-500" ~ 100,
+      no_employees == "More than 1000" ~ 1000,
+    )
+  ) %>%
+  mutate(
+    interfere_score = case_when(
+      work_interfere == "NA" ~ -1,
+      work_interfere == "Never" ~ 0,
+      work_interfere == "Rarely" ~ 1,
+      work_interfere == "Sometimes" ~ 2,
+      work_interfere == "Often" ~ 3,
+    )
+  ) %>%
+  mutate(
+    coworkers_score = case_when(
+      coworkers == "Yes" ~ 3,
+      coworkers == "No" ~ 0,
+      coworkers == "Some of them" ~ 1.5,
+    )
+  ) %>%
+  mutate(
+    supervisor_score = case_when(
+      supervisor == "Yes" ~ 3,
+      supervisor == "No" ~ 0,
+      supervisor == "Some of them" ~ 1.5,
+    )
+  ) %>%
+  select(interfere_score, size, supervisor_score, coworkers_score) %>%
+  filter(interfere_score >= 0)
+data <- aggregate(. ~ size, data = survey_size, FUN = mean, na.rm = TRUE)
+dfm = melt(data, id.vars='size')
+ggplot(dfm, aes(x=size, y=value, colour=variable)) +
+    geom_line() +
+    geom_point() +
+    ggtitle("Evolution de la maniere dont la sante interfere avec le travail, de la facilite de parler \n de ses soucis de sante mentale à ses superieurs et collegues, \n en fonction de la taille de l'entreprise") +
+    ylim(0, 3)
+```
+
+Ce graphique est intéressant, car il nous permet de constater que la santé interfère beaucoup plus avec le travail dans les petites et grandes entreprises. De même, on constate que les employés semblent plus en capacité d'évoquer leurs problèmes de santé mentale avec collègues et supérieurs dans les petites et moyennes entreprises. Il apparaît clair que les grandes entreprises sont le lieu le moins sain en terme de santé mentale des employés : c'est là où la santé mentale semble beaucoup interférer avec le travail, et en parallèle c'est le type d'entreprise où le sujet est le plus tabou.\
+A l'inverse, l'entreprise de taille moyenne semble la plus saine en terme de santé mentale des salariés.\
+A noter également que les salariés semblent plus enclins à parler de leurs soucis de santé mentale à leurs supérieurs qu'à leurs collègues. Nous creuserons ce point dans la partie suivante.
+
+En conclusion de cette deuxième partie, on peut affirmer que les grandes entreprises semblent être le lieu le moins sain en terme de santé mentale, et que les moyennes entreprises semblent les plus adaptées dans ce domaine. Le lieu géopgraphique de l'entreprise influe également. Par contre, le fait d'être son propre chef ne semble pas avoir trop de conséquences sur l'état mental du travailleur.
+
+### Quelle est la vision du salarié par rapport à la réalité/aux actions de l'entreprise ?
+
+Dans cette dernière partie, nous allons vérifier comment le salarié perçoit son entreprise. Un premier point d'approche serait de confirmer que **le salarié communique plus facilement avec ses supérieurs qu'avec ses collègues, et de trouver dans quel contexte cela prend forme**.
+
+Le graphique suivant, via la disposition camembert, permet d'afficher très simplement l'interlocuteur privilégié du salarié.
+
+```{r graphique13, echo=FALSE}
+survey_collegues_employeurs <- survey %>%
+  select(coworkers, supervisor) %>%
+  mutate(
+    val_co = case_when(
+      coworkers == "No" ~ 0,
+      coworkers == "Some of them" ~ 1,
+      coworkers == "Yes" ~ 2,
+    ),
+    val_sup = case_when(
+      supervisor == "No" ~ 0,
+      supervisor == "Some of them" ~ 1,
+      supervisor == "Yes" ~ 2,
+    )
+  ) %>%
+  mutate(
+    tendances = case_when(
+      val_co > val_sup ~ "collegue",
+      val_co == val_sup ~ "indifferent",
+      val_co < val_sup ~ "superieur",
+    )
+  ) %>%
+  group_by(tendances) %>%
+  summarise(n = n())
+
+pie(survey_collegues_employeurs$n,main = "Les salaries parlent-ils plus de leurs soucis de sante mentale a \n leurs superieurs ou a leurs collegues ? ",survey_collegues_employeurs$tendances,col = rainbow(length(survey_collegues_employeurs$n)))
+legend("topright", c("Collègue","Indifférent","Supérieur"), cex = 0.8,
+   fill = rainbow(length(survey_collegues_employeurs$n)))
+```
+
+Tout d'abord, on constate que pour une majorité des salariés, parler à l'un est aussi facile que d'en parler à l'autre. Cependant, il semble y avoir plus de salariés plus enclins à en parler à leurs supérieurs que de salariés préférant aborder le sujet avec leurs collègues. Ceci peut sembler logique puisque c'est le supérieur qui est réellement en capacité d'agir sur la charge mentale/de travail du salarié avec des problèmes de santé mentale.
+
+Regardons cette fois la volonté de parler de ses problèmes à ses collègues proches, selon que l'on en parle ou non à son supérieur et selon que l'on pense que cela puisse avoir des conséquences néfastes.
+
+Le graphique suivant permet d'afficher trois variables simultanément, en en mettant une en valeur. Nous souhaitons observer la moyenne du score (sur 10) de volonté/facilité de parler à ses collègues selon si oui ou non le salarié en parle à son supérieur et si oui ou non il pense qu'en parler peut avoir des conséquences néfastes. Cela fait 4 options possibles, donc 4 points sur le graphe dont la taille varie selon la moyenne. Ainsi, on peut observer facilement l'influence des deux critères.
+
+```{r graphique14, echo=FALSE}
+mental_health_consequence <- c("Yes", "No")
+supervisor <- c("Yes", "No")
+survey_mental_health_consequence <- survey %>%
+  select(Age, mental_health_consequence, supervisor, coworkers) %>%
+  filter(Age > 0) %>%
+  mutate(
+    coworkers_score = case_when(
+      coworkers == "Yes" ~ 10,
+      coworkers == "No" ~ 0,
+      coworkers == "Some of them" ~ 5,
+    ) # Taille de bulle
+  ) %>%
+  select(coworkers_score, mental_health_consequence, supervisor, coworkers) %>%
+  filter(supervisor != "Some of them") %>%
+  filter(mental_health_consequence != "Maybe")
+data <- aggregate(coworkers_score ~ mental_health_consequence + supervisor, data = survey_mental_health_consequence, FUN = mean, na.rm = TRUE)
+ggplot(data, aes(x = mental_health_consequence, y = supervisor)) + 
+  geom_point(aes(size = coworkers_score), alpha = 0.5) +
+    ggtitle("Moyenne du score de facilité/volonté de parler à ses collègues\nselon que le salarié en parle ou non à son supérieur\nselon qu'il pense qu'en parler ait des conséquences néfastes") +
+  scale_size(range = c(0, 10))
+```
+
+On peut déduire du graphe que quand un salarié parle à son supérieur, il en parle aussi souvent à ses collègues, et ce peu importe que le salarié pense qu'en parler puisse avoir des répercussions, même s'il apparait qu'il est légèrement moins enclin à parler à ses collègues en cas de conséquences néfastes.
+
+En revanche, quand le salarié n'en parle pas à son supérieur, il va très peu en parler à ses collègues, voire vraiment pas du tout en cas de conséquences néfastes. Cela vient confirmer la proposition faite tout à l'heure comme quoi le supérieur est plus sollicité sur le sujet que les collègues, notamment de par sa position décisive sur la charge de travail ou les congés.
+
+Ces analyses fonctionnent pour un salarié d'ores et déjà implanté dans une entreprise, **qu'en est-il de la recherche d'emploi ? Y a-t-il une corrélation entre le fait qu'un salarié en recherche de travail aborde le sujet de la santé mentale avec un potentiel employeur, et le fait qu'il ait déjà eu connaissance directement ou indirectement de conséquences négatives liées ?**
+
+Le graphique suivant permet d'afficher les répondants selon qu'ils aient observé des conséquences néfastes et parleraient de leurs troubles mentaux lors d'un entretien d'embauche. Le dynamisme de ce graphique offre deux possibilités : soit l'affichage en mode dodge avec un affichage "brut" des données (décompte) permettant d'observer les écarts en nombre de répondants, ou "fill" qui perd l'information du nombre de répondant mais permet d'afficher les proportions. On voit donc rapidement si une variable influe l'autre.
+
+```{r graphique15, echo=FALSE}
+survey_mental_health_interview_obs_consequence <- survey %>% select(mental_health_interview, obs_consequence)
+
+selectInput("select",
+  label = h3("Selectionner le type de barchart"),
+  choices = list("fill" = "fill", "dodge" = "dodge"), selected = "dodge"
+)
+
+renderPlot({
+  ggplot(survey_mental_health_interview_obs_consequence, aes(x = obs_consequence, fill = mental_health_interview)) +
+    geom_bar(position = input$select, colour = "black") +
+    ggtitle("Impact de l'observation de conséquences néfastes sur l'évocation des troubles mentaux en entretien d'embauche") +
+    scale_fill_brewer(palette = "Pastel1")
+})
+```
+
+De prime abord, la position *dodge* nous révèle que peu de gens dans le jeu de données ont déjà observé de conséquences négatives que parler de ses soucis auraient pu engendrer. Afin de les comparer, la position *fill* permet d'avoir la répartition des réponses en pourcentages. On constate avec étonnement que ceux qui ont observé des conséquences néfastes ont quasiment la même posture face à un recruteur que ceux n'ayant jamais observés ce genre de soucis : dans tous les cas, quasiment personne n'en parle, et la tendance s'accentue pour ceux ayant déjà observé des conséquences néfastes (il y a plus d'hésitants chez les gens n'ayant jamais été témoins de situations problématiques). Cela se justifie aisément par la peur de ne pas être embauché, et n'est donc pas étonnant.
+
+Afin d'effectuer une analyse plus poussée, il peut être utile de **vérifier la correspondance entre les actions d'une entreprise (facilité de prise de congé, programmes d'aide, ...) et la vision que le salarié a de son entreprise** (parle-t-il de ses problèmes à ses collègues et supérieurs, pense-t-il que cela va avoir des conséquences, en a-t-il observées ?).
+
+Afin de faciliter la lecture du graphique suivant, un "score" pour l'employé et pour l'entreprise a été établi : plus il est élevé, plus le salarié a une haute estime de son entreprise, ou, le cas échéant, plus l'entreprise est ouverte sur le sujet.
+
+Le graphique suivant permet de représenter un lien potentiel entre les actions de l'entreprise (évaluées sous forme de score global comprenant les sommes des scores des actions) et la vision qu'en a le salarié (score global de bien-être du salarié). Nous avons rassemblé ces deux critères, et pour chaque combinaison de scores possibles (en abscisse et ordonnée), compté le nombre de répondants avec les scores correspondants, traduit en taille attribuée au point à l'intersection des scores. Ce graphique est particulièrement indiqué pour identifier une tendance : si on imagine qu'il y a une proportion directe entre le score entreprise et le score salarié (1 pour 1), les points seront beaucoup plus gros autour de la droite diagonale. On pourra facilement identifier une tendance ou non.
+
+```{r graphique16, echo=FALSE}
+survey_score <- survey %>%
+  select(Age, leave, care_options, mental_health_consequence, obs_consequence, benefits, wellness_program, seek_help, anonymity, work_interfere, supervisor, coworkers) %>%
+  filter(Age > 0) %>%
+  mutate(
+    interfere = case_when(
+      work_interfere == "NA" ~ -1,
+      work_interfere == "Never" ~ 0,
+      work_interfere == "Rarely" ~ 1,
+      work_interfere == "Sometimes" ~ 2,
+      work_interfere == "Often" ~ 3,
+    )
+  ) %>%
+  mutate(
+    wellness_score = case_when(
+      wellness_program == "Don't know" ~ 0,
+      wellness_program == "Yes" ~ 1,
+      wellness_program == "No" ~ -1,
+    )
+  ) %>%
+  mutate(
+    seek_help_score = case_when(
+      seek_help == "Don't know" ~ 0,
+      seek_help == "Yes" ~ 1,
+      seek_help == "No" ~ -1,
+    )
+  ) %>%
+  mutate(
+    benefits_score = case_when(
+      benefits == "Don't know" ~ 0,
+      benefits == "Yes" ~ 1,
+      benefits == "No" ~ -1,
+    )
+  ) %>%
+  mutate(
+    anonymity_score = case_when(
+      anonymity == "Don't know" ~ 0,
+      anonymity == "Yes" ~ 1,
+      anonymity == "No" ~ -1,
+    )
+  ) %>%
+  mutate(
+    coworkers_score = case_when(
+      coworkers == "Yes" ~ 1,
+      coworkers == "No" ~ -1,
+      coworkers == "Some of them" ~ 0,
+    )
+  ) %>%
+  mutate(
+    care_options_score = case_when(
+      care_options == "Yes" ~ 1,
+      care_options == "No" ~ -1,
+      care_options == "Not sure" ~ 0,
+    )
+  ) %>%
+  mutate(
+    supervisor_score = case_when(
+      supervisor == "Yes" ~ 1,
+      supervisor == "No" ~ -1,
+      supervisor == "Some of them" ~ 0,
+    )
+  ) %>%
+  mutate(
+    obs_consequence_score = case_when(
+      obs_consequence == "Yes" ~ -1,
+      obs_consequence == "No" ~ 1,
+    )
+  ) %>%
+  mutate(
+    mental_health_consequence_score = case_when(
+      mental_health_consequence == "Yes" ~ -1,
+      mental_health_consequence == "No" ~ 1,
+      mental_health_consequence == "Maybe" ~ 0,
+    )
+  ) %>%
+  mutate(
+    leave_score = case_when(
+      leave == "Don't know" ~ 0,
+      leave == "Somewhat difficult" ~ -0.5,
+      leave == "Very difficult" ~ -1,
+      leave == "Very easy" ~ 1,
+      leave == "Somewhat easy" ~ 0.5,
+    )
+  ) %>%
+  select(interfere, leave_score, benefits_score, wellness_score, seek_help_score, anonymity_score, care_options_score, obs_consequence_score, mental_health_consequence_score,  supervisor_score, coworkers_score) %>%
+  filter(interfere > 0)
+survey_score$entreprise_score = rowSums(survey_score[, c("leave_score", "benefits_score", "wellness_score", "seek_help_score", "anonymity_score", "care_options_score")])
+survey_score$employee_score = rowSums(survey_score[, c("coworkers_score", "supervisor_score", "mental_health_consequence_score", "obs_consequence_score")])
+survey_score$count = 1
+data <- aggregate(count ~ employee_score + entreprise_score, data=survey_score, na.rm = TRUE, FUN = sum)
+ggplot(data, aes(x = employee_score, y = entreprise_score)) + 
+  geom_point(aes(size = count), alpha = 0.5) +
+  geom_hline(yintercept=0) +
+  geom_vline(xintercept=0) +
+  geom_abline(slope=6/4) +
+  ggtitle("Lien entre les actions de l'entreprise et la vision qu'en a le salarié") 
+```
+
+On peut s'attendre à ce que les points soient rassemblés et les plus gros possible autour de la droite oblique indiquant une correspondance de la vision du salarié proportionnelle aux actions de l'entreprise. On remarque qu'il y a plus de personnes en dessous de la droite, indiquant que ces salariés ont une meilleure opinion de leur lieu de travail vis-à-vis des actions mises en places, ce qui peut apparaitre surprenant. Cela peut s'expliquer aussi par une distinction invisible ici entre actions globales (programmes d'aide, ...) et actions locales (congés, supérieurs, ...) qui pourrait être en faveur du salarié. On remarque très peu de répondants en haut à gauche, c'est-à-dire qu'il y a très peu de salariés mécontents d'une entreprise qui en ferait beaucoup pour eux, ce qui est assez logique.
+
+Ainsi, les employés semblent plus nombreux à évoquer le sujet avec leurs supérieurs qu'avec leurs collègues, parfois même quand ils pensent que cela aurait des conséquences négatives. Les employés semblent par contre éviter à tout pris de parler du sujet avec leurs futurs employeurs, même s'ils n'ont jamais observé de situations similaires où cela aurait porté défaut à des salariés.. Malgré tout, ils semblent aussi avoir une image plutôt positive de leurs entreprises respectives, ce qui signifie peut-être qu'ils n'imputent par leurs soucis à leur travail forcément.
+
+## Conclusion
+
+En conclusion, nous avons pu remarquer au fil des analyses qu'il n'y a pas vraiment de profil type de l'employé avec des soucis de santé mentale. Cela ne semble pas interférer avec le travail de manière particulière pour une classe d'âge en particulier, sauf pour les très jeunes et très âgés qui ne semblent pas concernés par ces soucis.\
+On peut également affirmer que les grandes entreprises semblent être le lieu le moins sain en terme de santé mentale, et que les moyennes entreprises semblent les plus adaptées dans ce domaine. Le lieu géopgraphique de l'entreprise influe également. Par contre, le fait d'être son propre chef ne semble pas avoir trop de conséquences sur l'état mental du travailleur.\
+D'autre part, les employés semblent plus nombreux à évoquer le sujet avec leurs supérieurs qu'avec leurs collègues, parfois même quand ils pensent que cela aurait des conséquences négatives. Les employés semblent par contre éviter à tout pris de parler du sujet avec leurs futurs employeurs, même s'ils n'ont jamais observé de situations similaires où cela aurait porté défaut à des salariés.. Malgré tout, ils semblent aussi avoir une image plutôt positive de leurs entreprises respectives, ce qui signifie peut-être qu'ils n'imputent par leurs soucis à leur travail forcément.
+
+Ainsi, ce jeu de données a été intéressant à analyser, et nous a permis d'effectuer des visualisations variées, malgré la qualité des données parfois assez faible et le nombre important de variables catégorielles, qui ont impliqué beaucoup de travail de nettoyage et de conversion des données.
+
+Ce que nous retenons tous de ce projet n'est pas tant la maîtrise de R que nous avons acquise, mais surtout les compétences d'expression graphique de corrélation que nous avons développées. Il n'est pas toujours aisé de trouver la visusalisation la plus pertinente et adéquate, tout en essayant de varier les types d'approches. C'est cette partie du projet qui a été pour nous la plus fastidieuse mais aussi la plus intéressante.\
+\
+Afin d'aller plus loin dans le sujet de l'impact de la santé mentale dans le travail, il aurait été intéressant de comparer notre jeu de données avec des données plus récentes. En effet, le dataset date de 2014. Il est fort à parier que depuis les problèmes de santé mentale dans le monde du travail se soient accentués, notamment depuis le Covid et les isolements/périodes de télétravail qui ont découlés.\
+Aussi, si nous avions eu plus de temps pour élargir le projet, aurait-il été judicieux d'agglomérer notre dataset avec plusieurs autres jeux de données, de périodes différentes, pour avoir une idée de l'évolution du fléau que représente la montée des troubles psychologiques.
